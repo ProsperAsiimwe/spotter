@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 DATA_DIR = ROOT / "data"
 MODELS_DIR = ROOT / "models"
+MODEL_ARCHIVES = MODELS_DIR / "archives"
 REPORTS_DIR = ROOT / "reports"
 SCORER_RESULTS_DIR = ROOT / "scorer_results"
 
@@ -21,6 +22,7 @@ DECEMBER_INPUTS_CSV = ROOT / "december-chart-inputs.csv"
 VALIDATION_PREDICTIONS_CSV = ROOT / "validation_predictions.csv"
 
 MODEL_ARTIFACT = MODELS_DIR / "rate_model.joblib"
+MODEL_CURRENT_JSON = MODELS_DIR / "current.json"
 METRICS_JSON = REPORTS_DIR / "metrics.json"
 BASELINES_JSON = REPORTS_DIR / "baselines.json"
 EDA_MD = REPORTS_DIR / "eda.md"
