@@ -1,0 +1,49 @@
+{
+  "split": {
+    "train_rows": 38477,
+    "holdout_rows": 9523,
+    "train": "2025-01-01 to 2025-08-31",
+    "holdout": "2025-09-01 to 2025-10-31"
+  },
+  "equipment_rpm": {
+    "train": {
+      "mae": 233.6131,
+      "medae": 116.6376,
+      "mape": 10.5427,
+      "rpm_mae": 0.2344
+    },
+    "holdout": {
+      "mae": 229.0966,
+      "medae": 115.7157,
+      "mape": 10.4874,
+      "rpm_mae": 0.2382
+    },
+    "rpm_by_eq": {
+      "Dry Van": 2.0447,
+      "Flatbed": 2.2132,
+      "Reefer": 2.3103
+    }
+  },
+  "ridge": {
+    "train": {
+      "mae": 108.3825,
+      "medae": 44.6732,
+      "mape": 5.1042,
+      "rpm_mae": 0.1101
+    },
+    "holdout": {
+      "mae": 121.0081,
+      "medae": 48.2793,
+      "mape": 5.4738,
+      "rpm_mae": 0.1206
+    },
+    "cols": [
+      "distance",
+      "log_distance",
+      "weight",
+      "market_index",
+      "quote_signal",
+      "days_since_start"
+    ]
+  }
+}
