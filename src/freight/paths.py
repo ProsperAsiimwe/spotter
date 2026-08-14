@@ -22,4 +22,5 @@ VALIDATION_PREDICTIONS_CSV = ROOT / "validation_predictions.csv"
 
 MODEL_ARTIFACT = MODELS_DIR / "rate_model.joblib"
 METRICS_JSON = REPORTS_DIR / "metrics.json"
+EDA_MD = REPORTS_DIR / "eda.md"
 DECEMBER_CHART_PNG = SCORER_RESULTS_DIR / "candidate_december.png"
