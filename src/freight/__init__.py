@@ -1,0 +1,1 @@
+"""Shared rate-model code."""

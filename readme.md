@@ -1,25 +1,66 @@
-# Freight Rate Prediction Challenge
+# Freight rate prediction
 
-See `Freight_Rate_ML_Assessment.pdf` for the assessment instructions.
+Predicts `posted_rate` for truck loads. The labeled file (`data/train-test.csv`)
+runs Jan through Oct 2025. `data/validation.csv` is Nov-Dec and has no target.
+There's also a 31-day Lexington to Fort Wayne series used for the December chart.
 
-## What to do
+The original question is in `freight-rate-ml-assessment.pdf`.
 
-1. Train and validate your model using `data/train_test.csv`.
-2. Predict every load in `data/validation.csv`. Each load has a unique `load_id`.
-3. Fill the matching `predicted_rate` values in `data/validation_predictions_template.csv` and save it as `validation_predictions.csv`.
-4. Predict every row in `data/december_chart_inputs.csv` by filling its `predicted_rate` column.
-5. Install the scorer requirements and run:
+## Setup
+
+Python 3.9+. From the repo root:
 
 ```bash
-python -m pip install -r requirements.txt
-python score.py --predictions validation_predictions.csv --december-predictions data/december_chart_inputs.csv
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+export PYTHONPATH=src
 ```
 
-The scorer validates both files and creates `scorer_results/candidate_december.png`.
+`PYTHONPATH=src` is required so `import freight` works.
 
-## Submit
+## Run
 
-- GitHub repository containing your code, dependencies, and run instructions
-- `validation_predictions.csv`
-- PDF or DOCX report containing your validation, data split approach and `candidate_december.png`
-- 2-3 minute Loom link
+```bash
+python scripts/eda.py
+python scripts/train.py
+python scripts/predict.py
+python score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
+```
+
+`train.py` fits on `data/train-test.csv`, writes `reports/metrics.json`, and
+saves `models/rate_model.joblib`. `predict.py` writes `validation_predictions.csv`
+and fills `predicted_rate` on `december-chart-inputs.csv`.
+
+`score.py` shipped with the prompt; leave it alone. It checks both prediction
+files and writes `scorer_results/candidate_december.png`. If you only want to
+re-check the committed CSVs, skip to that command.
+
+`december-chart-inputs.csv` is in the repo root, not under `data/`. A few names
+in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
+
+## Layout
+
+- `src/freight/`: split, features, model. Train and predict both import from here.
+- `scripts/`: `eda.py`, `train.py`, `predict.py`
+- `data/train-test.csv`: 48k labeled rows
+- `data/validation.csv`: 12k rows to score
+- `data/validation-predictions-template.csv`: `load_id` list for the submission file
+- `reports/`: writeup and holdout metrics
+- `scorer_results/candidate_december.png`: chart from `score.py`
+
+## Model
+
+Date split: Jan-Aug train, Sep-Oct holdout. After that looks fine, refit on all
+48k labeled rows and predict the 12k file.
+
+LightGBM on `log1p(posted_rate)`, inverted with `expm1`. First baseline is
+distance times median $/mile by equipment type; the tree model has to beat that
+before I use it for the submission.
+
+Missing `weight` and `market_index` are filled with training-split medians.
+December rows don't include `market_index` or `quote_signal`, so those columns
+are optional in the same feature code (otherwise the chart goes flat).
+
+`validation_predictions.csv` is `load_id,predicted_rate` for `TE-000001` through
+`TE-012000`. All rates are positive.

@@ -40,3 +40,15 @@ htmlcov/
 # Runtime logs / pid files
 *.log
 *.pid
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Fitted artifacts (commit with: git add -f models/rate_model.joblib)
+models/*
+!models/.gitkeep
+
+# Local scorer output except the required chart
+scorer_results/*
+!scorer_results/.gitkeep
+!scorer_results/candidate_december.png
