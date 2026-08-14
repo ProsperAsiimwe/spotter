@@ -29,6 +29,7 @@ brew list libomp || brew install libomp
 
 ```bash
 python3 scripts/eda.py
+python3 scripts/baselines.py
 python3 scripts/train.py
 python3 scripts/predict.py
 python3 score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
@@ -48,7 +49,7 @@ in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
 ## Layout
 
 - `src/freight/`: split, features, model. Train and predict both import from here.
-- `scripts/`: `eda.py`, `train.py`, `predict.py`
+- `scripts/`: `eda.py`, `baselines.py`, `train.py`, `predict.py`
 - `data/train-test.csv`: 48k labeled rows
 - `data/validation.csv`: 12k rows to score
 - `data/validation-predictions-template.csv`: `load_id` list for the submission file
