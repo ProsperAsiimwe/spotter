@@ -11,10 +11,16 @@ The original question is in `freight-rate-ml-assessment.pdf`.
 Python 3.9+. From the repo root:
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 export PYTHONPATH=src
+```
+
+On macOS, LightGBM needs OpenMP. If `import lightgbm` fails with an OpenMP error:
+
+```bash
+brew list libomp || brew install libomp
 ```
 
 `PYTHONPATH=src` is required so `import freight` works.
@@ -46,7 +52,7 @@ in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
 - `data/train-test.csv`: 48k labeled rows
 - `data/validation.csv`: 12k rows to score
 - `data/validation-predictions-template.csv`: `load_id` list for the submission file
-- `reports/`: writeup and holdout metrics
+- `reports/`: EDA notes, writeup, holdout metrics
 - `scorer_results/candidate_december.png`: chart from `score.py`
 
 ## Model
