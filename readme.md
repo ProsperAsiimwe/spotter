@@ -28,10 +28,10 @@ brew list libomp || brew install libomp
 ## Run
 
 ```bash
-python scripts/eda.py
-python scripts/train.py
-python scripts/predict.py
-python score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
+python3 scripts/eda.py
+python3 scripts/train.py
+python3 scripts/predict.py
+python3 score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
 ```
 
 `train.py` fits on `data/train-test.csv`, writes `reports/metrics.json`, and
@@ -60,7 +60,8 @@ in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
 Date split: Jan-Aug train, Sep-Oct holdout. After that looks fine, refit on all
 48k labeled rows and predict the 12k file.
 
-LightGBM on `log1p(posted_rate)`, inverted with `expm1`. First baseline is
+LightGBM on `log1p(posted_rate)`, inverted with `expm1`. `random_state` is 42
+(`freight.config.SEED`), and `set_seed(42)` is called before fit. First baseline is
 distance times median $/mile by equipment type; the tree model has to beat that
 before I use it for the submission.
 
