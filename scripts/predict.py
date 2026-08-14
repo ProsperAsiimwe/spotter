@@ -24,7 +24,10 @@ from freight.progress import log
 def main() -> None:
     log(f"[predict] loading {MODEL_ARTIFACT}")
     artifact = load_artifact(MODEL_ARTIFACT)
-    log(f"[predict] fit_on={artifact.get('fit_on')}  params={artifact.get('params')}")
+    log(
+        f"[predict] family={artifact.get('family')}  fit_on={artifact.get('fit_on')}  "
+        f"params={artifact.get('params')}"
+    )
 
     steps = tqdm(total=2, desc="predict")
     log("[predict] scoring validation.csv (12,000 rows)")

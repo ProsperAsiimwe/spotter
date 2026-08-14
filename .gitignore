@@ -47,6 +47,10 @@ htmlcov/
 # Fitted artifacts (commit with: git add -f models/rate_model.joblib)
 models/*
 !models/.gitkeep
+!models/archives/
+!models/archives/.gitkeep
+models/archives/*
+!models/archives/.gitkeep
 
 # Local scorer output except the required chart
 scorer_results/*

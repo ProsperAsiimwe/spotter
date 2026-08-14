@@ -35,9 +35,11 @@ python3 scripts/predict.py
 python3 score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
 ```
 
-`train.py` fits on `data/train-test.csv`, writes `reports/metrics.json`, and
-saves `models/rate_model.joblib`. `predict.py` writes `validation_predictions.csv`
-and fills `predicted_rate` on `december-chart-inputs.csv`.
+`train.py` fits LightGBM, XGBoost, and CatBoost on the same Jan-Aug / Sep-Oct
+split, keeps the lowest holdout MAE, refits that family on all 48k labeled rows,
+and writes `models/rate_model.joblib`. The previous current model is moved to
+`models/archives/` with family, MAE, tree count, seed, and timestamp in the
+filename. `predict.py` always loads `models/rate_model.joblib`.
 
 `score.py` shipped with the prompt; leave it alone. It checks both prediction
 files and writes `scorer_results/candidate_december.png`. If you only want to
@@ -49,6 +51,8 @@ in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
 ## Layout
 
 - `src/freight/`: split, features, model. Train and predict both import from here.
+- `models/rate_model.joblib`: current winner
+- `models/archives/`: previous winners (name has family, MAE, trees, seed, time)
 - `scripts/`: `eda.py`, `baselines.py`, `train.py`, `predict.py`
 - `data/train-test.csv`: 48k labeled rows
 - `data/validation.csv`: 12k rows to score
@@ -61,13 +65,12 @@ in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
 Date split: Jan-Aug train, Sep-Oct holdout. After that looks fine, refit on all
 48k labeled rows and predict the 12k file.
 
-LightGBM on `log1p(posted_rate)`, inverted with `expm1`. `random_state` is 42
-(`freight.config.SEED`), and `set_seed(42)` is called before fit. Hyperparameters
-are picked by a time-split grid (`sklearn.model_selection.ParameterGrid`) on Sep-Oct
-MAE, not k-fold CV. The grid covers learning rate, leaves, min_child_samples, L2,
-`colsample_bytree` / `subsample` (column and row dropout), and a few DART configs
-with `drop_rate`. First baseline is distance times median $/mile by equipment type;
-the tree model has to beat that before I use it for the submission.
+LightGBM, XGBoost, and CatBoost all train on `log1p(posted_rate)` (MAE objective)
+and invert with `expm1`. `random_state` / `random_seed` is 42. Each family gets
+its own time-split grid (`ParameterGrid` on Sep-Oct MAE, not k-fold). Column and
+row dropout is `colsample_bytree` / `subsample` (CatBoost: `rsm` / `subsample`).
+The winner of that contest is the current model until the next `train.py` run.
+It still has to beat the miles-by-equipment and Ridge baselines.
 
 Missing `weight` and `market_index` are filled with training-split medians.
 December rows don't include `market_index` or `quote_signal`, so those columns
