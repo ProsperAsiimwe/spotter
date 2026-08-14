@@ -241,15 +241,29 @@ Not much history on the exact chart lane. Calendar features have to do some of t
 
 
 def main() -> None:
+    from tqdm import tqdm
+
+    from freight.progress import log
+
+    steps = tqdm(total=3, desc="eda")
+    log("[eda] loading csvs")
     train, val, december = _load()
+    log(f"[eda] labeled {len(train):,}  validation {len(val):,}  december {len(december)}")
+    steps.update(1)
+
+    log("[eda] writing plots")
     _write_plots(train)
+    steps.update(1)
+
+    log("[eda] writing reports/eda.md")
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     text = _report(train, val, december)
     EDA_MD.write_text(text)
-    print(text)
-    print(f"wrote {EDA_MD}")
-    print(f"wrote {REPORTS_DIR / 'eda_monthly_rate.png'}")
-    print(f"wrote {REPORTS_DIR / 'eda_rpm_by_equipment.png'}")
+    steps.update(1)
+    steps.close()
+    log(f"[eda] wrote {EDA_MD}")
+    log(f"[eda] wrote {REPORTS_DIR / 'eda_monthly_rate.png'}")
+    log(f"[eda] wrote {REPORTS_DIR / 'eda_rpm_by_equipment.png'}")
 
 
 if __name__ == "__main__":

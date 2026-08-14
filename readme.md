@@ -62,9 +62,12 @@ Date split: Jan-Aug train, Sep-Oct holdout. After that looks fine, refit on all
 48k labeled rows and predict the 12k file.
 
 LightGBM on `log1p(posted_rate)`, inverted with `expm1`. `random_state` is 42
-(`freight.config.SEED`), and `set_seed(42)` is called before fit. First baseline is
-distance times median $/mile by equipment type; the tree model has to beat that
-before I use it for the submission.
+(`freight.config.SEED`), and `set_seed(42)` is called before fit. Hyperparameters
+are picked by a time-split grid (`sklearn.model_selection.ParameterGrid`) on Sep-Oct
+MAE, not k-fold CV. The grid covers learning rate, leaves, min_child_samples, L2,
+`colsample_bytree` / `subsample` (column and row dropout), and a few DART configs
+with `drop_rate`. First baseline is distance times median $/mile by equipment type;
+the tree model has to beat that before I use it for the submission.
 
 Missing `weight` and `market_index` are filled with training-split medians.
 December rows don't include `market_index` or `quote_signal`, so those columns
