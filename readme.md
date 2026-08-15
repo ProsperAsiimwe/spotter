@@ -1,14 +1,16 @@
 # Freight rate prediction
 
-Predicts `posted_rate` for truck loads. The labeled file (`data/train-test.csv`)
-runs Jan through Oct 2025. `data/validation.csv` is Nov-Dec and has no target.
-There's also a 31-day Lexington to Fort Wayne series used for the December chart.
+This project predicts `posted_rate` for truck loads using the labeled data in
+`data/train-test.csv`, which covers January through October 2025. The
+unlabeled `data/validation.csv` contains November and December observations
+for which the target column, posted_rate is not provided. A separate 31-day Lexington-to-Fort
+Wayne series, `./december-chart-inputs.csv` is also included for the December prediction chart.
 
-The original question is in `freight-rate-ml-assessment.pdf`.
+The original assessment question is provided in `freight-rate-ml-assessment.pdf`.
 
 ## Setup
 
-Python 3.9+. From the repo root:
+The project requires Python 3.9 or later. From the repository root:
 
 ```bash
 python3 -m venv .venv
@@ -17,15 +19,19 @@ pip install -r requirements.txt
 export PYTHONPATH=src
 ```
 
-On macOS, LightGBM needs OpenMP. If `import lightgbm` fails with an OpenMP error:
+On macOS, LightGBM requires OpenMP. If `import lightgbm` fails with an
+OpenMP-related error, install `libomp` with Homebrew:
 
 ```bash
 brew list libomp || brew install libomp
 ```
 
-`PYTHONPATH=src` is required so `import freight` works.
+`PYTHONPATH=src` is required so that the shared `freight` package can be
+imported by the training and prediction scripts.
 
 ## Run
+
+The full workflow can be reproduced with:
 
 ```bash
 python3 scripts/eda.py
@@ -35,46 +41,72 @@ python3 scripts/predict.py
 python3 score.py --predictions validation_predictions.csv --december-predictions december-chart-inputs.csv
 ```
 
-`train.py` fits LightGBM, XGBoost, and CatBoost on the same Jan-Aug / Sep-Oct
-split, keeps the lowest holdout MAE, refits that family on all 48k labeled rows,
-and writes `models/rate_model.joblib`. The previous current model is moved to
-`models/archives/` with family, MAE, tree count, seed, and timestamp in the
-filename. `predict.py` always loads `models/rate_model.joblib`.
+The analysis begins with exploratory data analysis and baseline models before
+moving to model selection and final prediction.
 
-`score.py` shipped with the prompt; leave it alone. It checks both prediction
-files and writes `scorer_results/candidate_december.png`. If you only want to
-re-check the committed CSVs, skip to that command.
+`train.py` evaluates LightGBM, XGBoost, and CatBoost using the same
+January-August training period and September-October holdout period. The model
+with the lowest holdout MAE is selected, then refit on all 48k labeled rows.
+The resulting model is saved to `models/rate_model.joblib`.
 
-`december-chart-inputs.csv` is in the repo root, not under `data/`. A few names
-in the PDF use underscores (`train_test.csv`); the files on disk use hyphens.
+When a new model replaces the current one, the previous model is moved to
+`models/archives/`. Its filename records the model family, holdout MAE, tree
+count, random seed, and training timestamp so that previous runs can be
+identified and compared. `predict.py` always loads the current model from
+`models/rate_model.joblib`.
+
+`score.py` was supplied with the assessment and should not be modified. It
+evaluates both prediction files and produces
+`scorer_results/candidate_december.png`. If the committed CSVs are already
+available and only the final scoring needs to be reproduced, the earlier
+commands can be skipped.
+
+`december-chart-inputs.csv` is located in the repository root rather than
+under `data/`. The assessment PDF also refers to some files using underscores,
+such as `train_test.csv`; the corresponding files in the repository use
+hyphens.
 
 ## Layout
 
-- `src/freight/`: split, features, model. Train and predict both import from here.
-- `models/rate_model.joblib`: current winner
-- `models/archives/`: previous winners (name has family, MAE, trees, seed, time)
-- `scripts/`: `eda.py`, `baselines.py`, `train.py`, `predict.py`
-- `data/train-test.csv`: 48k labeled rows
-- `data/validation.csv`: 12k rows to score
-- `data/validation-predictions-template.csv`: `load_id` list for the submission file
-- `reports/`: EDA notes, writeup, holdout metrics
-- `scorer_results/candidate_december.png`: chart from `score.py`
+* `src/freight/`: shared split, feature, and model code used by training and prediction
+* `models/rate_model.joblib`: current selected model
+* `models/archives/`: previous models, with family, MAE, tree count, seed, and timestamp in the filename
+* `scripts/`: `eda.py`, `baselines.py`, `train.py`, and `predict.py`
+* `data/train-test.csv`: 48k labeled observations from January through October
+* `data/validation.csv`: 12k unlabeled observations from November and December
+* `data/validation-predictions-template.csv`: `load_id` values for the submission file
+* `reports/`: EDA notes, modelling writeup, and holdout metrics
+* `scorer_results/candidate_december.png`: December chart generated by `score.py`
 
-## Model
+## Models
 
-Date split: Jan-Aug train, Sep-Oct holdout. After that looks fine, refit on all
-48k labeled rows and predict the 12k file.
+The modelling strategy follows the temporal structure of the data. January
+through August is used for training and September through October is held out
+for model selection. Once the best-performing configuration has been
+identified, that configuration is refit on all 48k labeled observations and
+used to predict the 12k validation rows.
 
-LightGBM, XGBoost, and CatBoost all train on `log1p(posted_rate)` (MAE objective)
-and invert with `expm1`. `random_state` / `random_seed` is 42. Each family gets
-its own time-split grid (`ParameterGrid` on Sep-Oct MAE, not k-fold). Column and
-row dropout is `colsample_bytree` / `subsample` (CatBoost: `rsm` / `subsample`).
-The winner of that contest is the current model until the next `train.py` run.
-It still has to beat the miles-by-equipment and Ridge baselines.
+LightGBM, XGBoost, and CatBoost are all trained on `log1p(posted_rate)` with an
+MAE objective, and predictions are transformed back to the original rate scale
+with `expm1`. The random seed is fixed at 42 (`random_state` or
+`random_seed`, depending on the model).
 
-Missing `weight` and `market_index` are filled with training-split medians.
-December rows don't include `market_index` or `quote_signal`, so those columns
-are optional in the same feature code (otherwise the chart goes flat).
+Each model family has its own time-based hyperparameter grid. Candidate
+configurations are evaluated with `ParameterGrid` using September-October MAE,
+rather than k-fold cross-validation, so that the evaluation remains
+consistent with the chronological nature of the forecasting problem.
 
-`validation_predictions.csv` is `load_id,predicted_rate` for `TE-000001` through
-`TE-012000`. All rates are positive.
+Column and row subsampling are controlled through `colsample_bytree` and
+`subsample`; for CatBoost, the corresponding parameters are `rsm` and
+`subsample`. The configuration with the lowest holdout MAE becomes the current
+model until the next `train.py` run. The selected model must also outperform
+the miles-by-equipment and Ridge baselines.
+
+Missing `weight` and `market_index` values are filled using medians calculated
+from the training split. The December data does not contain `market_index` or
+`quote_signal`, so these columns are treated as optional by the shared feature
+code. This is necessary for the December predictions to vary appropriately
+rather than producing a flat chart.
+
+`validation_predictions.csv` contains `load_id,predicted_rate` for
+`TE-000001` through `TE-012000`. All predicted rates are positive.
