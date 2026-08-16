@@ -10,22 +10,23 @@ The original assessment question is provided in `freight-rate-ml-assessment.pdf`
 
 ## Live demo
 
-The repository includes a live deployment of the final selected model for
-interactive inspection. During model selection, LightGBM, XGBoost, and
-CatBoost were evaluated using the same January-August training and
-September-October holdout split. Those three are the usual gradient-boosted
-tree families for this kind of table: mixed numeric and high-cardinality
-categorical columns, nonlinear interactions (equipment and distance, city,
-month), and irregular event rows rather than a dense panel. LightGBM is
-built for fast histogram splits on large tabular sets. XGBoost is the
-standard regularized boosting baseline. CatBoost is the one designed around
-categorical features, which matters here because pickup, delivery, and
-equipment are categoricals. LightGBM achieved the lowest holdout MAE
-($108.58, compared with $109.90 for XGBoost and $116.51 for CatBoost) and was
-therefore selected as the final model.
+The repository produces the final selected model, which is then deployed to
+Hugging Face for inference through a custom-built web interface. LightGBM,
+XGBoost, and CatBoost were evaluated using the same January-August training
+and September-October holdout split. These model families were chosen for the
+tabular structure of the problem, which combines numerical and high-cardinality
+categorical features with nonlinear interactions between distance, equipment,
+location, and time.
 
-The deployed application serves this frozen LightGBM artifact directly. It
-does not retrain the model or select a different model family at request time.
+LightGBM achieved the lowest holdout MAE at **$108.58**, compared with
+$109.90 for XGBoost and $116.51 for CatBoost, and was selected as the final
+model.
+
+The resulting `models/rate_model.joblib` artifact is deployed to Hugging Face
+and loaded by the inference service. The custom web interface sends shipment
+features to the service and presents the resulting predictions and model
+diagnostics interactively. The deployed application does not retrain the
+model or select a different model family at request time.
 
 **Live demo:** [prosperasiimwe.dev/freight](https://prosperasiimwe.dev/freight)
 
@@ -85,7 +86,7 @@ curl -s https://byteroot-lane-rate.hf.space/predict \
 That Lexington row should come back near `$839.50`, which matches
 `december-chart-inputs.csv` for 2025-12-01.
 
-## Setup
+## LOCAL SETUP of this repository
 
 The project requires Python 3.9 or later. From the repository root:
 
