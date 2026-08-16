@@ -8,6 +8,83 @@ Wayne series, `./december-chart-inputs.csv` is also included for the December pr
 
 The original assessment question is provided in `freight-rate-ml-assessment.pdf`.
 
+## Live demo
+
+The repository includes a live deployment of the final selected model for
+interactive inspection. During model selection, LightGBM, XGBoost, and
+CatBoost were evaluated using the same January-August training and
+September-October holdout split. Those three are the usual gradient-boosted
+tree families for this kind of table: mixed numeric and high-cardinality
+categorical columns, nonlinear interactions (equipment and distance, city,
+month), and irregular event rows rather than a dense panel. LightGBM is
+built for fast histogram splits on large tabular sets. XGBoost is the
+standard regularized boosting baseline. CatBoost is the one designed around
+categorical features, which matters here because pickup, delivery, and
+equipment are categoricals. LightGBM achieved the lowest holdout MAE
+($108.58, compared with $109.90 for XGBoost and $116.51 for CatBoost) and was
+therefore selected as the final model.
+
+The deployed application serves this frozen LightGBM artifact directly. It
+does not retrain the model or select a different model family at request time.
+
+**Live demo:** [prosperasiimwe.dev/freight](https://prosperasiimwe.dev/freight)
+
+The interface provides test cases designed to exercise conditions handled by
+the same training and prediction pipeline:
+
+- **Presets:** Lexington to Fort Wayne, missing weight, an unseen city
+  (Laredo), a long Reefer haul, and Christmas.
+- **December mode:** removes `market_index` and `quote_signal`, matching the
+  December chart data.
+- **Prediction output:** predicted freight rate, implied dollars per mile,
+  inference latency, and the equipment-by-miles baseline for comparison.
+- **Model diagnostics:** the December prediction series and LightGBM gain
+  feature importance are generated from the live API.
+- **Cold-start handling:** the application displays a wake/retry message when
+  the underlying free Hugging Face Space has been sleeping. The first request
+  after a period of inactivity can take up to a minute.
+
+The GitHub repository remains the source of truth for the assessment and
+contains the complete training and prediction pipeline. Training data is not
+uploaded to the deployment. The live application serves only the locked
+`models/rate_model.joblib` artifact.
+
+## Hugging Face
+
+The deployment uses two Hugging Face repositories: one for the serialized
+model artifact and one for the HTTP inference service.
+
+**Model:** [huggingface.co/Byteroot/lane-rate-lgbm](https://huggingface.co/Byteroot/lane-rate-lgbm)
+
+- `rate_model.joblib` (~2.3 MB): serialized dictionary containing the feature
+  builder, fitted LightGBM booster, model family, parameters, and holdout
+  metrics. This is the same artifact loaded locally by `predict.py`.
+- `current.json`: lightweight model metadata containing the model family,
+  number of trees, random seed, holdout MAE, and the fact that the final model
+  was refit on all 48k labeled observations.
+
+**Space:** [huggingface.co/spaces/Byteroot/lane-rate](https://huggingface.co/spaces/Byteroot/lane-rate)
+
+The inference service runs as a Docker Space using FastAPI on port 7860. Its
+public host is [byteroot-lane-rate.hf.space](https://byteroot-lane-rate.hf.space).
+At startup, the service downloads `rate_model.joblib` from the model
+repository and loads it once. A copy of `src/freight/` is included in the
+Space so that the serialized feature builder and model can be resolved
+correctly.
+
+The FastAPI OpenAPI documentation is available at `/docs`.
+
+For Example:
+
+```bash
+curl -s https://byteroot-lane-rate.hf.space/predict \
+  -H 'content-type: application/json' \
+  -d '{"pickup":"Lexington","delivery":"Fort Wayne","distance":360,"equipment":"Dry Van","weight":32000,"date":"2025-12-01"}'
+```
+
+That Lexington row should come back near `$839.50`, which matches
+`december-chart-inputs.csv` for 2025-12-01.
+
 ## Setup
 
 The project requires Python 3.9 or later. From the repository root:
