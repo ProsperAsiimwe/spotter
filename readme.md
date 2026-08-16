@@ -6,7 +6,7 @@ unlabeled `data/validation.csv` contains November and December observations
 for which the target column, posted_rate is not provided. A separate 31-day Lexington-to-Fort
 Wayne series, `./december-chart-inputs.csv` is also included for the December prediction chart.
 
-The original assessment question is provided in `freight-rate-ml-assessment.pdf`. A report artifact is also present in this repository at reports/Report - Spotter ML Engineer Assessment.pdf, or [prosperasiimwe.dev/freight](https://drive.google.com/file/d/1jpeHzFRbKfgQlRzQqMugPVBHaDHf27Ih/view?usp=sharing)
+The original assessment question is provided in `freight-rate-ml-assessment.pdf`. A report artifact is also present in this repository at reports/Report - Spotter ML Engineer Assessment.pdf, or [Google Drive](https://drive.google.com/file/d/1jpeHzFRbKfgQlRzQqMugPVBHaDHf27Ih/view?usp=sharing)
 
 ## Live demo
 
