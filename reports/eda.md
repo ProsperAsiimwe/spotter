@@ -1,6 +1,6 @@
 # EDA notes
 
-From `scripts/eda.py`. Numbers come off the CSVs, not the PDF.
+From `scripts/eda.py`. Numbers come off the CSV files.
 
 ## Files
 
