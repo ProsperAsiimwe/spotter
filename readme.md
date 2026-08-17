@@ -50,42 +50,6 @@ contains the complete training and prediction pipeline. Training data is not
 uploaded to the deployment. The live application serves only the locked
 `models/rate_model.joblib` artifact.
 
-## Hugging Face
-
-The deployment uses two Hugging Face repositories: one for the serialized
-model artifact and one for the HTTP inference service.
-
-**Model:** [huggingface.co/Byteroot/lane-rate-lgbm](https://huggingface.co/Byteroot/lane-rate-lgbm)
-
-- `rate_model.joblib` (~2.3 MB): serialized dictionary containing the feature
-  builder, fitted LightGBM booster, model family, parameters, and holdout
-  metrics. This is the same artifact loaded locally by `predict.py`.
-- `current.json`: lightweight model metadata containing the model family,
-  number of trees, random seed, holdout MAE, and the fact that the final model
-  was refit on all 48k labeled observations.
-
-**Space:** [huggingface.co/spaces/Byteroot/lane-rate](https://huggingface.co/spaces/Byteroot/lane-rate)
-
-The inference service runs as a Docker Space using FastAPI on port 7860. Its
-public host is [byteroot-lane-rate.hf.space](https://byteroot-lane-rate.hf.space).
-At startup, the service downloads `rate_model.joblib` from the model
-repository and loads it once. A copy of `src/freight/` is included in the
-Space so that the serialized feature builder and model can be resolved
-correctly.
-
-The FastAPI OpenAPI documentation is available at `/docs`.
-
-For Example:
-
-```bash
-curl -s https://byteroot-lane-rate.hf.space/predict \
-  -H 'content-type: application/json' \
-  -d '{"pickup":"Lexington","delivery":"Fort Wayne","distance":360,"equipment":"Dry Van","weight":32000,"date":"2025-12-01"}'
-```
-
-That Lexington row should come back near `$839.50`, which matches
-`december-chart-inputs.csv` for 2025-12-01.
-
 ## LOCAL SETUP of this repository
 
 The project requires Python 3.9 or later. From the repository root:
@@ -185,4 +149,40 @@ code. This is necessary for the December predictions to vary appropriately
 rather than producing a flat chart.
 
 `validation_predictions.csv` contains `load_id,predicted_rate` for
-`TE-000001` through `TE-012000`. All predicted rates are positive.
+`TE-000001` through `TE-012000`. All predicted rates are positive. 
+
+## Hugging Face
+
+The deployment uses two Hugging Face repositories: one for the serialized
+model artifact and one for the HTTP inference service.
+
+**Model:** [huggingface.co/Byteroot/lane-rate-lgbm](https://huggingface.co/Byteroot/lane-rate-lgbm)
+
+- `rate_model.joblib` (~2.3 MB): serialized dictionary containing the feature
+  builder, fitted LightGBM booster, model family, parameters, and holdout
+  metrics. This is the same artifact loaded locally by `predict.py`.
+- `current.json`: lightweight model metadata containing the model family,
+  number of trees, random seed, holdout MAE, and the fact that the final model
+  was refit on all 48k labeled observations.
+
+**Space:** [huggingface.co/spaces/Byteroot/lane-rate](https://huggingface.co/spaces/Byteroot/lane-rate)
+
+The inference service runs as a Docker Space using FastAPI on port 7860. Its
+public host is [byteroot-lane-rate.hf.space](https://byteroot-lane-rate.hf.space).
+At startup, the service downloads `rate_model.joblib` from the model
+repository and loads it once. A copy of `src/freight/` is included in the
+Space so that the serialized feature builder and model can be resolved
+correctly.
+
+The FastAPI OpenAPI documentation is available at `/docs`.
+
+For Example:
+
+```bash
+curl -s https://byteroot-lane-rate.hf.space/predict \
+  -H 'content-type: application/json' \
+  -d '{"pickup":"Lexington","delivery":"Fort Wayne","distance":360,"equipment":"Dry Van","weight":32000,"date":"2025-12-01"}'
+```
+
+That Lexington row should come back near `$839.50`, which matches
+`december-chart-inputs.csv` for 2025-12-01.
